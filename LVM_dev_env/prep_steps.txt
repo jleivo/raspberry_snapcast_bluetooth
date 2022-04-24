@@ -1,0 +1,29 @@
+# ref https://raspberrypi.stackexchange.com/questions/85958/easy-backups-and-snapshots-of-a-running-system-with-lvm, with personal updates
+
+$ sudo -Es
+# APT command to cover both Buster & Bullseye ...
+apt update && apt full-upgrade -y || apt upgrade -y
+apt install initramfs-tools lvm2 -y
+
+cp /boot/config.txt /boot/config.org
+
+# modify config.txt for PI3
+ls /lib/modules/
+initramfs initrd.img-5.10.103-v7+ followkernel #Buster
+initramfs initrd.img-5.15.32-v7+ followkernel #Bullseye
+
+# load limited amount of modules
+sed -i 's/^MODULES=most/MODULES=list/' /etc/initramfs-tools/initramfs.conf
+
+# Build RAMfs image
+mkinitramfs -o /boot/initrd.img-5.10.103-v7+ 5.10.103-v7+ #Buster
+mkinitramfs -o /boot/initrd.img-5.15.32-v7+ 5.15.32-v7+ #Bullseye
+
+reboot
+
+# verify
+ sudo journalctl -b | grep initr
+
+#should see
+Apr 24 11:52:18 tuprpisnap10 kernel: Trying to unpack rootfs image as initramfs...
+Apr 24 11:52:18 tuprpisnap10 kernel: Freeing initrd memory: 8480K
